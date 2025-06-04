@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./IRecipient.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20";
 contract Swap is Ownable, ReentrancyGuard{
-    using SafeERC20 for IERC20
+    using SafeERC20 for IERC20;
     //swapRouter
     ISwapRouter public immutable swapRouter;
     //the address where fees are paid to
@@ -33,9 +33,9 @@ contract Swap is Ownable, ReentrancyGuard{
         feeBps = _feeBps;
     }
 
-    function getFee(uint amount) internal returns(uint fee) view {
+    function getFee(uint amount) internal view returns(uint fee){
         //returns the fee for the certain amount passed
-        fee = amount * feeBps;
+        fee = (amount * feeBps) / 10000;
     }
 
     function swap(address tokenIn, address tokenOut, uint amountIn, uint minAmountOut) external payable nonReentrant {
@@ -50,7 +50,7 @@ contract Swap is Ownable, ReentrancyGuard{
         uint fee = getFee(amountIn);
         IERC20 token1 = IERC20(tokenIn);
         IERC20 token2 = IERC20(tokenOut);
-        require(token1.balanceOf(msg.sender) >= amountIn, "Insufficient balance");
+        require(token1.balanceOf(msg.sender) >= (amountIn + fee), "Insufficient balance");
         token1.safeTransferFrom(msg.sender, address(this), amountIn + fee);
         
         /*
@@ -59,6 +59,7 @@ contract Swap is Ownable, ReentrancyGuard{
         this contract has to safeApprove feeRecipient for spending of the fee so that the receive function will work 
         */
         IRecipient recipient = IRecipient(feeRecipient);
+        token1.safeApprove(feeRecipient, 0);
         token1.safeApprove(feeRecipient, fee);
         recipient.receiveToken(token1, fee);
         
