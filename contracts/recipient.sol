@@ -3,7 +3,7 @@ pragma solidity =0.7.6;
 pragma abicoder v2;
 
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
+import '@uniswap/v3-periphery/contracts/libraries/safeTransferHelper.sol';
 import "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -40,8 +40,8 @@ contract recipient is Ownable,ReentrancyGuard {
 
         //an interface for the token to be received
         IERC20 token = IERC20(_token);
-        //transfer token from msg.sender
-        token.transferFrom(msg.sender, address(this), amount);
+        //safeTransfer token from msg.sender
+        token.safeTransferFrom(msg.sender, address(this), amount);
         //update the balance of the token sent
         tokens[_token] += amount;
         //update the list of tokens held
