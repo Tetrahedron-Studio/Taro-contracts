@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./IRecipient.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 contract Swap is Ownable, ReentrancyGuard, Pausable{
     using SafeERC20 for IERC20;
@@ -32,7 +33,7 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
     constructor(ISwapRouter _swapRouter, uint _feeBps, address _feeRecipient) Ownable () {
         swapRouter = _swapRouter;
         //ensure fee recipient is a contract
-        require(Address.isContract(_feeRecipient), "Fee Recipient must be a contract")
+        require(Address.isContract(_feeRecipient), "Fee Recipient must be a contract");
         feeRecipient = _feeRecipient;
         feeBps = _feeBps;
     }
@@ -99,7 +100,7 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
     function setFeeRecipient(address newRecipient) public onlyOwner {
         //change the address that receives fees
         address old = feeRecipient;
-        require(Address.isContract(newRecipient), "Fee Recipient must be a contract")
+        require(Address.isContract(newRecipient), "Fee Recipient must be a contract");
         feeRecipient = newRecipient;
         emit recipientChanged(old, newRecipient, block.timestamp);
     }
