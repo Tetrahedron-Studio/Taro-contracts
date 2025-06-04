@@ -9,7 +9,9 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./IRecipient.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20";
-contract Swap is Ownable, ReentrancyGuard{
+import "@openzeppelin/contracts/security/Pausable.sol";
+
+contract Swap is Ownable, ReentrancyGuard, Pausable{
     using SafeERC20 for IERC20;
     //swapRouter
     ISwapRouter public immutable swapRouter;
@@ -38,14 +40,13 @@ contract Swap is Ownable, ReentrancyGuard{
         fee = (amount * feeBps) / 10000;
     }
 
-    function swap(address tokenIn, address tokenOut, uint amountIn, uint minAmountOut) external payable nonReentrant returns(uint amountOut){
+    function swap(address tokenIn, address tokenOut, uint amountIn, uint minAmountOut) external payable nonReentrant whenNotPaused returns(uint amountOut){
         //swaps tokens
 
         /* 
         fee -> get the fee using getFee()
         token1 and token2 are the interfaces for tokenIn and tokenOut respectively
-        checks if the user that called this function has enough of tokenIn to swap
-        safeTransfer amountIn of token1 and the fee from the user's balance, but the user has to safeApprove from his own end
+        Transfer amountIn of token1 and the fee from the user's balance, but the user has to safeApprove from his own end
         */
         uint fee = getFee(amountIn);
         IERC20 token1 = IERC20(tokenIn);
@@ -99,5 +100,19 @@ contract Swap is Ownable, ReentrancyGuard{
         address old = feeRecipient;
         feeRecipient = newRecipient;
         emit recipientChanged(old, newRecipient, block.timestamp);
+    }
+
+    //pause mechanisms
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    //rescue
+    function rescueTokens(address token, address to, uint amount) external onlyOwner {
+        IERC20(token).safeTransfer(to, amount);
     }
 }
