@@ -5,7 +5,7 @@ interface IRecipient {
     //change delegate
     function changeDelegate(address _newDelegate);
     //for receiving erc20 tokens
-    function receive(address token, uint amount);
+    function receiveToken(address token, uint amount);
     ////when the delegate is changed
     event newDelegate(address indexed newDelegate);
     //when all tokens are wihdrawn

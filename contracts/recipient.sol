@@ -35,7 +35,7 @@ contract recipient is Ownable,ReentrancyGuard {
         emit newDelegate(delegate);
     }
 
-    function receive(address _token, uint amount) external {
+    function receiveToken(address _token, uint amount) external {
         //for receiving erc20 tokens
 
         //an interface for the token to be received

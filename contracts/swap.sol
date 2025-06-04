@@ -3,13 +3,14 @@ pragma solidity =0.7.6;
 pragma abicoder v2;
 
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-import '@uniswap/v3-periphery/contracts/libraries/safeTransferHelper.sol';
+import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 import "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./IRecipient.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20";
 contract Swap is Ownable, ReentrancyGuard{
+    using SafeERC20 for IERC20
     //swapRouter
     ISwapRouter public immutable swapRouter;
     //the address where fees are paid to
@@ -32,12 +33,12 @@ contract Swap is Ownable, ReentrancyGuard{
         feeBps = _feeBps;
     }
 
-    function getFee(uint amount) internal returns(uint fee) {
+    function getFee(uint amount) internal returns(uint fee) view {
         //returns the fee for the certain amount passed
         fee = amount * feeBps;
     }
 
-    function swap(address tokenIn, address tokenOut, uint amountIn, uint minAmountOut) external payable nonReentrant returns(uint amountOut){
+    function swap(address tokenIn, address tokenOut, uint amountIn, uint minAmountOut) external payable nonReentrant {
         //swaps tokens
 
         /* 
@@ -50,16 +51,16 @@ contract Swap is Ownable, ReentrancyGuard{
         IERC20 token1 = IERC20(tokenIn);
         IERC20 token2 = IERC20(tokenOut);
         require(token1.balanceOf(msg.sender) >= amountIn, "Insufficient balance");
-        token1.safesafeTransferFrom(msg.sender, address(this), amountIn + fee);
+        token1.safeTransferFrom(msg.sender, address(this), amountIn + fee);
         
         /*
         recipient -> is the interface for the address where the fees go
-        it has a function called  receive which safeTransfers the specified amount of the specified token from the caller
+        it has a function called  receiveToken which safeTransfers the specified amount of the specified token from the caller
         this contract has to safeApprove feeRecipient for spending of the fee so that the receive function will work 
         */
         IRecipient recipient = IRecipient(feeRecipient);
         token1.safeApprove(feeRecipient, fee);
-        recipient.receive(token1, fee);
+        recipient.receiveToken(token1, fee);
         
         //safeApprove the swapRouter for spending of amountIn
         token1.safeApprove(address(swapRouter), amountIn);
@@ -72,7 +73,7 @@ contract Swap is Ownable, ReentrancyGuard{
             recipient: address(this),
             deadline: block.timestamp,
             amountOutMinimum: minAmountOut,//this is the minimum amount of tokenOut that should be received.
-            sqrtPriceLimitX96: 0 //dont know wha this does; yet.
+            sqrtPriceLimitX96: 0 
         });
 
         //execute the swap, amountOut stores the amount of tokenOut that is received after the swap
@@ -86,7 +87,7 @@ contract Swap is Ownable, ReentrancyGuard{
     //admin functions
     function setFee(uint newFee) public onlyOwner {
         //change the fee
-        oldfee = feeBps;
+        uint oldfee = feeBps;
         feeBps = newFee;
         emit FeeChanged(oldfee, newFee, block.timestamp);
     }
