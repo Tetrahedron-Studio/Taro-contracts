@@ -31,6 +31,8 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
 
     constructor(ISwapRouter _swapRouter, uint _feeBps, address _feeRecipient) Ownable () {
         swapRouter = _swapRouter;
+        //ensure fee recipient is a contract
+        require(Address.isContract(_feeRecipient), "Fee Recipient must be a contract")
         feeRecipient = _feeRecipient;
         feeBps = _feeBps;
     }
@@ -51,7 +53,6 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
         uint fee = getFee(amountIn);
         IERC20 token1 = IERC20(tokenIn);
         IERC20 token2 = IERC20(tokenOut);
-        require(token1.balanceOf(msg.sender) >= (amountIn + fee), "Insufficient balance");
         token1.safeTransferFrom(msg.sender, address(this), amountIn + fee);
         
         /*
@@ -98,6 +99,7 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
     function setFeeRecipient(address newRecipient) public onlyOwner {
         //change the address that receives fees
         address old = feeRecipient;
+        require(Address.isContract(newRecipient), "Fee Recipient must be a contract")
         feeRecipient = newRecipient;
         emit recipientChanged(old, newRecipient, block.timestamp);
     }
