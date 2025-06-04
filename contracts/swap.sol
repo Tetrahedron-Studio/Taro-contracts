@@ -38,7 +38,7 @@ contract Swap is Ownable, ReentrancyGuard{
         fee = (amount * feeBps) / 10000;
     }
 
-    function swap(address tokenIn, address tokenOut, uint amountIn, uint minAmountOut) external payable nonReentrant {
+    function swap(address tokenIn, address tokenOut, uint amountIn, uint minAmountOut) external payable nonReentrant returns(uint amountOut){
         //swaps tokens
 
         /* 
@@ -64,6 +64,7 @@ contract Swap is Ownable, ReentrancyGuard{
         recipient.receiveToken(token1, fee);
         
         //safeApprove the swapRouter for spending of amountIn
+        token1.safeApprove(address(swapRouter), 0);
         token1.safeApprove(address(swapRouter), amountIn);
 
         //parameters for the swapRouter
@@ -78,7 +79,7 @@ contract Swap is Ownable, ReentrancyGuard{
         });
 
         //execute the swap, amountOut stores the amount of tokenOut that is received after the swap
-        uint amountOut = swapRouter.exactInputSingle(params);
+        amountOut = swapRouter.exactInputSingle(params);
 
         //safeTransfer token2 to the user who called and emit an event for the swap
         token2.safeTransfer(msg.sender, amountOut);
