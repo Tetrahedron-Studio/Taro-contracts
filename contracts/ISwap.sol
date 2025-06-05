@@ -9,11 +9,11 @@ interface ISwap {
     //when the receiving addrees for fees is changed
     event recipientChanged(address indexed oldRecipient, address indexed newRecipient, uint indexed time);
     //returns the fee for the certain amount passed
-    function getFee(uint amount);
+    function getFee(uint amount) external;
     //swaps tokens
-    function swap(address tokenIn, address tokenOut, uint amountIn, uint minAmountOut);
+    function swap(address tokenIn, address tokenOut, uint amountIn, uint minAmountOut) external;
     //change the fee
-    function setFee(uint newFee);
+    function setFee(uint newFee) external;
     //change the address that receives fees
-    function setFeeRecipient(address newRecipient);
+    function setFeeRecipient(address newRecipient) external;
 }

@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./IRecipient.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 contract Swap is Ownable, ReentrancyGuard, Pausable{
@@ -20,7 +20,7 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
     //the percentage charged as fee
     uint public feeBps;
     //poolfee might still be changed later
-    uint public constant poolFee = 3000;
+    uint24 public constant poolFee = 3000;
 
     //for when a swap is executed
     event SwapExecuted(address indexed user, address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut, uint feeAmount, uint time);
@@ -63,7 +63,7 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
         IRecipient recipient = IRecipient(feeRecipient);
         token1.safeApprove(feeRecipient, 0);
         token1.safeApprove(feeRecipient, fee);
-        recipient.receiveToken(token1, fee);
+        recipient.receiveToken(address(token1), fee);
         
         //safeApprove the swapRouter for spending of amountIn
         token1.safeApprove(address(swapRouter), 0);
@@ -76,6 +76,7 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
             fee: poolFee,
             recipient: address(this),
             deadline: block.timestamp,
+            amountIn: amountIn,
             amountOutMinimum: minAmountOut,//this is the minimum amount of tokenOut that should be received.
             sqrtPriceLimitX96: 0 
         });

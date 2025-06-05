@@ -8,7 +8,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-contract recipient is Ownable,ReentrancyGuard {
+contract FeeRecipientMock is Ownable,ReentrancyGuard {
     using SafeERC20 for IERC20;
     /*
     a mapping of all the tokens this contract holds and thier balance
@@ -31,14 +31,14 @@ contract recipient is Ownable,ReentrancyGuard {
         delegate = msg.sender;
     }
 
-    function changeDelegate(address _newDelegate) external onlyOwner {
+    function changeDelegate(address _newDelegate) public onlyOwner {
         //change delegate
         require(_newDelegate != address(0), "Invalid delegate address");
         delegate = _newDelegate;
         emit newDelegate(delegate);
     }
 
-    function receiveToken(address _token, uint amount) external {
+    function receiveToken(address _token, uint amount) public {
         //for receiving erc20 tokens
         require(_token != address(0));
         //an interface for the token to be received
