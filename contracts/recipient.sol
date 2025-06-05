@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20";
 
 contract recipient is Ownable,ReentrancyGuard {
+    using SafeERC20 for IERC20;
     /*
     a mapping of all the tokens this contract holds and thier balance
     token address -> balance
@@ -27,19 +28,19 @@ contract recipient is Ownable,ReentrancyGuard {
     event withdrawal(address indexed token, uint indexed amount, uint indexed time);
 
     constructor() Ownable() {
-        using SafeERC20 for IERC20;
         delegate = msg.sender;
     }
 
     function changeDelegate(address _newDelegate) external onlyOwner {
         //change delegate
+        require(_newDelegate != address(0), "Invalid delegate address");
         delegate = _newDelegate;
         emit newDelegate(delegate);
     }
 
     function receiveToken(address _token, uint amount) external {
         //for receiving erc20 tokens
-
+        require(_token != address(0));
         //an interface for the token to be received
         IERC20 token = IERC20(_token);
         //safeTransfer token from msg.sender
@@ -50,13 +51,14 @@ contract recipient is Ownable,ReentrancyGuard {
         //logically if the balance of the token is equal to amount sent, this contract hasn't held that token before
         if (!tokenExist[_token]) {
             tokens_list.push(_token);
-            tokenExist[token] = true;
+            tokenExist[_token] = true;
         }
         //emit event of token receival
         emit received(_token, amount, block.timestamp);
     }
 
     function swap(address tokenIn, address tokenOut, uint amountIn, uint minAmountOut, ISwapRouter _swapRouter, uint24 _poolFee) internal returns(uint amountOut) {
+        require(_swapRouter != address(0), "Invalid swapRouter");
         //_swapRouter parameters
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: tokenIn,
@@ -89,8 +91,8 @@ contract recipient is Ownable,ReentrancyGuard {
             //update token balance to 0
             tokens[tokens_list[0]] = 0;
             //delete token address
-            delete tokens_list;
             delete tokenExist[tokens_list[0]];
+            delete tokens_list;
         } else if (tokens_list.length > 1){
             //if contract holds multiple tokens
             for(uint i = 0; i < tokens_list.length; i++) {
@@ -98,8 +100,8 @@ contract recipient is Ownable,ReentrancyGuard {
                 //update token balance to 0
                 tokens[tokens_list[i]] = 0;
             }
-            delete tokens_list;
             delete tokenExist[tokens_list[i]];
+            delete tokens_list;
             emit withdrawal(tokenOut, total, block.timestamp);
         }
     }
