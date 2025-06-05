@@ -7,6 +7,7 @@ import '@uniswap/v3-periphery/contracts/libraries/safeTransferHelper.sol';
 import "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20";
 
 contract recipient is Ownable,ReentrancyGuard {
     /*
@@ -15,7 +16,7 @@ contract recipient is Ownable,ReentrancyGuard {
     */
     mapping(address => uint) public tokens;
     //an array containing the list of all tokens this contract holds
-    address[] public tokens_list
+    address[] public tokens_list;
     //the address of the EOA that can withdraw all tokens
     address public delegate;
     //when the delegate is changed
@@ -65,6 +66,8 @@ contract recipient is Ownable,ReentrancyGuard {
             sqrtPriceLimitX96: 0
         });
 
+        IERC20(tokenIn).safeApprove(address(_swapRouter), 0)
+        IERC20(tokenIn).safeApprove(address(_swapRouter), amountIn)
         //swap the token
         amountOut = _swapRouter.exactInputSingle(params);
     }
@@ -77,14 +80,14 @@ contract recipient is Ownable,ReentrancyGuard {
         //var for storing total amount of tokenOut token received after swapping the contracts portfolio
         uint total;
          
-        if (tokens_list.length = 1) {
+        if (tokens_list.length == 1) {
             //if contract holds one token
-            swap(tokens_list[0], tokenOut, tokens[tokens_list[0]], 0, _swapRouter, _poolFee)
+            swap(tokens_list[0], tokenOut, tokens[tokens_list[0]], 0, _swapRouter, _poolFee);
             emit withdrawal(tokenOut, tokens[tokens_list[0]], block.timestamp);
             //update token balance to 0
             tokens[tokens_list[0]] = 0;
             //delete token address
-            tokens_list.pop();
+            delete tokens_list;
         } else if (tokens_list.length > 1){
             //if contract holds multiple tokens
             for(uint i = 0; i < tokens_list.length; i++) {
@@ -92,10 +95,7 @@ contract recipient is Ownable,ReentrancyGuard {
                 //update token balance to 0
                 tokens[tokens_list[i]] = 0;
             }
-            for(uint i = 0; i < tokens_list.length; i++) {
-                //remove all token addresses
-                tokens_list.pop();
-            }
+            delete tokens_list;
             emit withdrawal(tokenOut, total, block.timestamp);
         }
     }
