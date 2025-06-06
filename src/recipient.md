@@ -1,4 +1,4 @@
----
+
 # recipient.sol – Documentation
 
 ## Overview
@@ -94,5 +94,3 @@ The recipient contract acts as a fee collection and withdrawal hub for ERC20 tok
 ## Summary
 
 The recipient contract is a secure and flexible fee collector and swapper for ERC20 tokens. It supports automated fee collection, multi-token portfolio management, and safe conversion to a target asset for onward distribution. Its design is modular, secure, and easily extensible for DeFi integrations.
-
----
