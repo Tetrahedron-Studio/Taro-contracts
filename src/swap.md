@@ -97,7 +97,3 @@ This contract, `Swap`, acts as a swap proxy using the Uniswap V3 router. It allo
 ## Summary
 
 This `Swap` contract safely and flexibly allows users to swap ERC20 tokens via Uniswap V3, with a fee system and strong owner/admin controls. It follows security best practices and is modular for integration with other contracts/services.
-
----
-
-Let me know if you want this in a different format or wish to expand the documentation!
