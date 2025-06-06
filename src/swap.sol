@@ -47,13 +47,13 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
 
         /* 
         fee -> get the fee using getFee()
-        token1 and token2 are the interfaces for tokenIn and tokenOut respectively
-        Transfer amountIn of token1 and the fee from the user's balance, but the user has to safeApprove from his own end
+        tokenIn is the token being swapped for another token
+        tokenOut is the token tokenIn is swapped for
+        Transfer amountIn of tokenIn and the fee from the user's balance, but the user has to safeApprove from his own end
         */
         uint fee = getFee(amountIn);
-        IERC20 token1 = IERC20(tokenIn);
         IERC20 token2 = IERC20(tokenOut);
-        token1.safeTransferFrom(msg.sender, address(this), amountIn + fee);
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn + fee);
         
         /*
         recipient -> is the interface for the address where the fees go
@@ -61,13 +61,13 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
         this contract has to safeApprove feeRecipient for spending of the fee so that the receive function will work 
         */
         IRecipient recipient = IRecipient(feeRecipient);
-        token1.safeApprove(feeRecipient, 0);
-        token1.safeApprove(feeRecipient, fee);
+        IERC20(tokenIn).safeApprove(feeRecipient, 0);
+        IERC20(tokenIn).safeApprove(feeRecipient, fee);
         recipient.receiveToken(address(token1), fee);
         
         //safeApprove the swapRouter for spending of amountIn
-        token1.safeApprove(address(swapRouter), 0);
-        token1.safeApprove(address(swapRouter), amountIn);
+        IERC20(tokenIn).safeApprove(address(swapRouter), 0);
+        IERC20(tokenIn).safeApprove(address(swapRouter), amountIn);
 
         //parameters for the swapRouter
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
@@ -84,21 +84,22 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
         //execute the swap, amountOut stores the amount of tokenOut that is received after the swap
         amountOut = swapRouter.exactInputSingle(params);
 
-        //safeTransfer token2 to the user who called and emit an event for the swap
-        token2.safeTransfer(msg.sender, amountOut);
+        //safeTransfer tokenOut to the user who called and emit an event for the swap
+        IERC20(tokenOut).safeTransfer(msg.sender, amountOut);
         emit SwapExecuted(msg.sender, tokenIn, tokenOut, amountIn, amountOut, fee, block.timestamp);
     }
 
     //admin functions
+
+    //change the fees
     function setFee(uint newFee) public onlyOwner {
-        //change the fee
         uint oldfee = feeBps;
         feeBps = newFee;
         emit FeeChanged(oldfee, newFee, block.timestamp);
     }
 
+    //change the address that receives fees
     function setFeeRecipient(address newRecipient) public onlyOwner {
-        //change the address that receives fees
         address old = feeRecipient;
         require(Address.isContract(newRecipient), "Fee Recipient must be a contract");
         feeRecipient = newRecipient;
@@ -114,7 +115,7 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
         _unpause();
     }
 
-    //rescue
+    //send all leftover tokens to Fee recipient 
     function rescueTokens(address token, address to, uint amount) external onlyOwner {
         IERC20(token).safeTransfer(to, amount);
     }
