@@ -59,7 +59,7 @@ The recipient contract acts as a fee collection and withdrawal hub for ERC20 tok
 
 - Internal function.
 - Swaps amountIn of tokenIn for tokenOut using Uniswap V3, sending output to the delegate.
-- Uses safeApprove pattern for security.
+- Uses approve pattern for security.
 - Returns the amount of tokenOut received.
 
 #### withdrawFees(address tokenOut, ISwapRouter _swapRouter, uint24 _poolFee)

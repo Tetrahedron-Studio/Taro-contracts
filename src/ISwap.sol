@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity =0.7.6;
+pragma solidity ^0.8.28;
 
 interface ISwap {
     //for when a swap is executed

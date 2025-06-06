@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity =0.7.6;
+pragma solidity ^0.8.28;
 pragma abicoder v2;
 
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./IRecipient.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
@@ -29,10 +29,10 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
     //when the receivin addrees for fees is changed
     event recipientChanged(address indexed oldRecipient, address indexed newRecipient, uint indexed time);
 
-    constructor(ISwapRouter _swapRouter, uint _feeBps, address _feeRecipient) Ownable () {
+    constructor(ISwapRouter _swapRouter, uint _feeBps, address _feeRecipient) Ownable(msg.sender) {
         swapRouter = _swapRouter;
         //ensure fee recipient is a contract
-        require(Address.isContract(_feeRecipient), "Fee Recipient must be a contract");
+        //require(Address.isContract(_feeRecipient), "Fee Recipient must be a contract");
         feeRecipient = _feeRecipient;
         feeBps = _feeBps;
     }
@@ -47,27 +47,28 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
 
         /* 
         fee -> get the fee using getFee()
-        tokenIn is the token being swapped for another token
-        tokenOut is the token tokenIn is swapped for
-        Transfer amountIn of tokenIn and the fee from the user's balance, but the user has to safeApprove from his own end
+        token1 is the token being swapped for another token
+        token2 is the token tokenIn is swapped for
+        Transfer amountIn of tokenIn and the fee from the user's balance, but the user has to approve from his own end
         */
-        uint fee = getFee(amountIn);
+        IERC20 token1 = IERC20(tokenIn);
         IERC20 token2 = IERC20(tokenOut);
-        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn + fee);
+        uint fee = getFee(amountIn);
+        token1.safeTransferFrom(msg.sender, address(this), amountIn + fee);
         
         /*
         recipient -> is the interface for the address where the fees go
         it has a function called  receiveToken which safeTransfers the specified amount of the specified token from the caller
-        this contract has to safeApprove feeRecipient for spending of the fee so that the receive function will work 
+        this contract has to approve feeRecipient for spending of the fee so that the receive function will work 
         */
         IRecipient recipient = IRecipient(feeRecipient);
-        IERC20(tokenIn).safeApprove(feeRecipient, 0);
-        IERC20(tokenIn).safeApprove(feeRecipient, fee);
+        token1.approve(feeRecipient, 0);
+        token1.approve(feeRecipient, fee);
         recipient.receiveToken(address(token1), fee);
         
-        //safeApprove the swapRouter for spending of amountIn
-        IERC20(tokenIn).safeApprove(address(swapRouter), 0);
-        IERC20(tokenIn).safeApprove(address(swapRouter), amountIn);
+        //approve the swapRouter for spending of amountIn
+        IERC20(tokenIn).approve(address(swapRouter), 0);
+        IERC20(tokenIn).approve(address(swapRouter), amountIn);
 
         //parameters for the swapRouter
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
@@ -85,7 +86,7 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
         amountOut = swapRouter.exactInputSingle(params);
 
         //safeTransfer tokenOut to the user who called and emit an event for the swap
-        IERC20(tokenOut).safeTransfer(msg.sender, amountOut);
+        token2.safeTransfer(msg.sender, amountOut);
         emit SwapExecuted(msg.sender, tokenIn, tokenOut, amountIn, amountOut, fee, block.timestamp);
     }
 
@@ -101,7 +102,7 @@ contract Swap is Ownable, ReentrancyGuard, Pausable{
     //change the address that receives fees
     function setFeeRecipient(address newRecipient) public onlyOwner {
         address old = feeRecipient;
-        require(Address.isContract(newRecipient), "Fee Recipient must be a contract");
+        //require(Address.isContract(newRecipient), "Fee Recipient must be a contract");
         feeRecipient = newRecipient;
         emit recipientChanged(old, newRecipient, block.timestamp);
     }

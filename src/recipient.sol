@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity =0.7.6;
+pragma solidity ^0.8.28;
 pragma abicoder v2;
 
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import "@openzeppelin/contracts/access/Ownable.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract recipient is Ownable,ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -27,7 +27,7 @@ contract recipient is Ownable,ReentrancyGuard {
     //when all tokens are wihdrawn
     event withdrawal(address indexed token, uint indexed amount, uint indexed time);
 
-    constructor() Ownable() {
+    constructor() Ownable(msg.sender) {
         delegate = msg.sender;
     }
 
@@ -70,9 +70,9 @@ contract recipient is Ownable,ReentrancyGuard {
             amountOutMinimum: minAmountOut,
             sqrtPriceLimitX96: 0
         });
-
-        IERC20(tokenIn).safeApprove(address(_swapRouter), 0);
-        IERC20(tokenIn).safeApprove(address(_swapRouter), amountIn);
+        IERC20 token1 = IERC20(tokenIn);
+        token1.approve(address(_swapRouter), 0);
+        token1.approve(address(_swapRouter), amountIn);
         //swap the token
         amountOut = _swapRouter.exactInputSingle(params);
     }
